@@ -1,8 +1,13 @@
+require('dotenv').config();
 const mongoose = require('mongoose');
 const Discount = require('./models/discountModel');
-require('dotenv').config();
 
 const MONGODB_URI = process.env.MONGODB_URI;
+
+if (!MONGODB_URI) {
+  console.error('❌ MONGODB_URI not set in .env');
+  process.exit(1);
+}
 
 const connectDB = async () => {
   try {
@@ -16,6 +21,11 @@ const connectDB = async () => {
     process.exit(1);
   }
 };
+
+// Optional: Listen for any errors after connection
+mongoose.connection.on('error', err => {
+  console.error('MongoDB connection error:', err);
+});
 
 const seedDiscounts = async () => {
   try {
@@ -61,5 +71,5 @@ const seedDiscounts = async () => {
   }
 };
 
+// Connect to DB and seed discounts
 connectDB().then(seedDiscounts);
-

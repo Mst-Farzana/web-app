@@ -2,9 +2,10 @@
 import { ref } from 'vue';
 import axios from 'axios';
 import { useRouter } from 'vue-router';
-import { loginAdmin } from '../../stores/adminAuth'; // স্টোর থেকে ইমপোর্ট করুন
+import { useAdminAuthStore } from '../../stores/adminAuth';
 
 const router = useRouter();
+const adminAuthStore = useAdminAuthStore();
 
 const adminUserId = ref('');
 const adminPassword = ref('');
@@ -12,7 +13,10 @@ const errors = ref({});
 const successMsg = ref('');
 const loading = ref(false);
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000';
+const API_BASE =
+  import.meta.env.MODE === 'development'
+    ? 'http://localhost:5000'
+    : 'https://web-app-production.up.railway.app'; // <-- ঠিক করুন
 
 const handleAdminLogin = async () => {
   errors.value = {};
@@ -36,8 +40,7 @@ const handleAdminLogin = async () => {
       password: trimmedPassword,
     });
 
-    // এখানে সরাসরি localStorage না দিয়ে স্টোর ফাংশন ব্যবহার করুন
-    loginAdmin(data.token, data.user);
+    adminAuthStore.loginAdmin(data.token, data.user);
 
     successMsg.value = `Welcome ${data.user.firstName}! Redirecting...`;
 
@@ -45,12 +48,12 @@ const handleAdminLogin = async () => {
       router.push('/admin/dashboard');
     }, 800);
   } catch (error) {
-    // Password ফিল্ড খালি করুন
     adminPassword.value = '';
-
-    errors.value.general =
-      error.response?.data?.message ||
-      'Network error. Please check your connection.';
+    if (error.response?.data?.message) {
+      errors.value.general = error.response.data.message;
+    } else {
+      errors.value.general = 'Login failed. Please try again.';
+    }
   } finally {
     loading.value = false;
   }
@@ -68,7 +71,6 @@ const handleAdminLogin = async () => {
         v-model="adminUserId"
         type="text"
         placeholder="Admin User ID"
-        aria-label="Admin User ID"
         class="input-field"
         autocomplete="username"
       />
@@ -80,7 +82,6 @@ const handleAdminLogin = async () => {
         v-model="adminPassword"
         type="password"
         placeholder="Password"
-        aria-label="Password"
         class="input-field"
         autocomplete="current-password"
       />

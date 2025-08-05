@@ -23,40 +23,40 @@ const form = ref({
   category: '',
   name: '',
   details: '',
-  img: '', // used if using URL
+  img: '',
   price: '',
 });
 
 const error = ref('');
 const loading = ref(false);
 
-// Watch for img url for preview and clear file if URL is set
+// 🧠 Watch img URL changes → update preview
 watch(
   () => form.value.img,
   newUrl => {
     if (newUrl) {
-      file.value = null; // Clear file if URL entered
+      file.value = null;
       previewUrl.value = newUrl;
       imageLoadError.value = false;
     }
   }
 );
 
+// 📁 Handle file selection
 const handleFileUpload = event => {
   const uploaded = event.target.files[0];
   if (uploaded && uploaded.type.startsWith('image/')) {
     file.value = uploaded;
     previewUrl.value = URL.createObjectURL(uploaded);
-    form.value.img = ''; // Clear img URL
+    form.value.img = '';
     imageLoadError.value = false;
   } else {
-    alert('Please select a valid image file');
+    alert('Please select a valid image file.');
   }
 };
 
-const submitForm = async () => {
-  error.value = '';
-
+// ✅ Validate form before submission
+const validateForm = () => {
   if (
     !form.value.category ||
     !form.value.name ||
@@ -65,14 +65,20 @@ const submitForm = async () => {
     !form.value.price
   ) {
     error.value = 'All fields are required!';
-    return;
+    return false;
   }
+  return true;
+};
+
+// 🚀 Submit form (file or URL)
+const submitForm = async () => {
+  error.value = '';
+  if (!validateForm()) return;
 
   loading.value = true;
 
   try {
     if (file.value) {
-      // If file upload
       const formData = new FormData();
       formData.append('category', form.value.category);
       formData.append('name', form.value.name);
@@ -84,35 +90,21 @@ const submitForm = async () => {
         'http://localhost:5000/api/categoryItems/upload',
         formData,
         {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
+          headers: { 'Content-Type': 'multipart/form-data' },
         }
       );
     } else {
-      // If using URL
       await axios.post('http://localhost:5000/api/categoryItems', {
         category: form.value.category,
         name: form.value.name,
         details: form.value.details,
-        img: form.value.img, // should be a valid URL
+        img: form.value.img,
         price: Number(form.value.price),
       });
     }
 
-    // Emit submitted event with category so parent can update list
     emit('submitted', form.value.category);
-
-    // Reset form
-    form.value = {
-      category: '',
-      name: '',
-      details: '',
-      img: '',
-      price: '',
-    };
-    previewUrl.value = '';
-    file.value = null;
+    resetForm();
   } catch (err) {
     error.value = err.response?.data?.message || 'Failed to add product';
   } finally {
@@ -120,7 +112,21 @@ const submitForm = async () => {
   }
 };
 
-// Clean up created object URLs on unmount to avoid memory leaks
+// ♻️ Reset form
+const resetForm = () => {
+  form.value = {
+    category: '',
+    name: '',
+    details: '',
+    img: '',
+    price: '',
+  };
+  previewUrl.value = '';
+  file.value = null;
+  imageLoadError.value = false;
+};
+
+// 🧼 Cleanup URL blob when unmounted
 onBeforeUnmount(() => {
   if (previewUrl.value && file.value) {
     URL.revokeObjectURL(previewUrl.value);
@@ -132,16 +138,18 @@ onBeforeUnmount(() => {
   <div class="max-w-md mx-auto p-6 border rounded shadow bg-white mt-10">
     <h3 class="text-xl font-bold mb-4">Add New Product</h3>
 
+    <!-- Category -->
     <div class="mb-3">
       <label class="block mb-1 font-semibold">Select Category</label>
       <select v-model="form.category" class="w-full border rounded p-2">
-        <option value="" disabled>Select a category</option>
+        <option disabled value="">Select a category</option>
         <option v-for="cat in categories" :key="cat" :value="cat">
           {{ cat }}
         </option>
       </select>
     </div>
 
+    <!-- Name -->
     <div class="mb-3">
       <label class="block mb-1 font-semibold">Product Name</label>
       <input
@@ -152,12 +160,14 @@ onBeforeUnmount(() => {
       />
     </div>
 
+    <!-- Details -->
     <div class="mb-3">
       <label class="block mb-1 font-semibold">Product Details</label>
       <textarea
         v-model="form.details"
         class="w-full border rounded p-2"
         rows="3"
+        placeholder="Write a short description"
       ></textarea>
     </div>
 
@@ -167,7 +177,7 @@ onBeforeUnmount(() => {
       <input type="file" accept="image/*" @change="handleFileUpload" />
     </div>
 
-    <!-- OR URL -->
+    <!-- OR Image URL -->
     <div class="mb-3">
       <label class="block mb-1 font-semibold">Or Enter Image URL</label>
       <input
@@ -190,6 +200,7 @@ onBeforeUnmount(() => {
       </p>
     </div>
 
+    <!-- Price -->
     <div class="mb-3">
       <label class="block mb-1 font-semibold">Price (৳)</label>
       <input
@@ -200,8 +211,10 @@ onBeforeUnmount(() => {
       />
     </div>
 
+    <!-- Error message -->
     <div v-if="error" class="mb-3 text-red-600 font-semibold">{{ error }}</div>
 
+    <!-- Action Buttons -->
     <div class="flex justify-between items-center">
       <button
         @click="submitForm"

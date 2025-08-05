@@ -3,27 +3,26 @@ import { ref } from 'vue';
 import axios from 'axios';
 import { useRouter } from 'vue-router';
 
-/* ────────────────────────────────── */
-/* props / emits                      */
-const emit = defineEmits(['logged-in']); // 👉 parent can listen: @logged-in="onLogged"
+const emit = defineEmits(['logged-in']);
 
-/* ────────────────────────────────── */
-/* reactive state                     */
-const email = ref(''); // can be contact number too
+const email = ref('');
 const password = ref('');
 const errors = ref({});
 const successMsg = ref('');
 const loading = ref(false);
-const router = useRouter(); // ⬅️ remove if not using router
+const router = useRouter();
 
-/* ────────────────────────────────── */
-/* form submit                         */
+// ⬇️ Use dynamic base URL
+const baseURL =
+  import.meta.env.MODE === 'development'
+    ? 'http://localhost:5000'
+    : 'https://shopease-production.up.railway.app';
+
 const handleLogin = async () => {
   errors.value = {};
   successMsg.value = '';
   loading.value = true;
 
-  /* simple validation */
   if (!email.value) errors.value.email = 'Email or Contact is required';
   else if (
     !/^\S+@\S+\.\S+$/.test(email.value) &&
@@ -38,21 +37,14 @@ const handleLogin = async () => {
   }
 
   try {
-    const { data } = await axios.post('http://localhost:5000/api/users/login', {
+    const { data } = await axios.post(`${baseURL}/api/users/login`, {
       identifier: email.value,
       password: password.value,
     });
 
-    /* 1️⃣  persist session */
     localStorage.setItem('user', JSON.stringify(data.user));
-
-    /* 2️⃣  notify parent */
     emit('logged-in', data.user);
 
-    /* 3️⃣  optional redirect (comment‑out if not needed) */
-    // await router.push({ name: 'dashboard' });
-
-    /* 4️⃣  success feedback (shown briefly before modal closes) */
     successMsg.value = `Login successful! Welcome ${data.user.firstName}`;
   } catch (err) {
     errors.value.general =

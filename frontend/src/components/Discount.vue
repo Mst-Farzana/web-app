@@ -13,6 +13,7 @@ onMounted(() => {
 // Watch for refresh from outside (e.g. delete)
 watch(refreshTrigger, () => {
   discountStore.fetchDiscounts();
+  console.log('repeatedProducts: ', repeatedProducts.length);
 });
 
 // Use data from store

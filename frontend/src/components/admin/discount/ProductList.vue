@@ -1,20 +1,26 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue';
 import axios from 'axios';
-import { refreshTrigger } from '../../../stores/discountDelete'; // ensure this exports ref(0)
+import { refreshTrigger } from '../../../stores/discountDelete';
+
+// Dynamic backend URL for local or production
+const baseURL =
+  import.meta.env.MODE === 'development'
+    ? 'http://localhost:5000'
+    : 'https://web-app-productions.up.railway.app';
 
 const products = ref([]);
 const loading = ref(false);
 const error = ref('');
 const adminToken = localStorage.getItem('adminToken') || '';
 
-// Fetch products from backend API
+// Fetch all products
 const fetchProducts = async () => {
   loading.value = true;
   error.value = '';
   try {
-    const response = await axios.get('http://localhost:5000/api/discounts');
-    products.value = response.data;
+    const res = await axios.get(`${baseURL}/api/discounts`);
+    products.value = res.data;
   } catch (err) {
     error.value = 'Failed to fetch discounts';
   } finally {
@@ -22,19 +28,16 @@ const fetchProducts = async () => {
   }
 };
 
-// Delete product by ID with Authorization header
+// Delete a product
 const deleteProduct = async id => {
   if (!confirm('Are you sure you want to delete this product?')) return;
 
-  console.log('Admin token:', adminToken); // For debugging token presence
-
   try {
-    await axios.delete(`http://localhost:5000/api/discounts/${id}`, {
-      headers: { Authorization: `Bearer ${adminToken}` }, // Pass the token here!
+    await axios.delete(`${baseURL}/api/discounts/${id}`, {
+      headers: { Authorization: `Bearer ${adminToken}` },
     });
-    // Remove deleted product from list
     products.value = products.value.filter(p => p._id !== id);
-    refreshTrigger.value++; // Notify other components if needed
+    refreshTrigger.value++;
   } catch (err) {
     console.error('Delete failed:', err.response?.data || err);
     alert(
@@ -45,7 +48,6 @@ const deleteProduct = async id => {
   }
 };
 
-// Initial load and re-fetch on refreshTrigger change
 onMounted(fetchProducts);
 watch(refreshTrigger, fetchProducts);
 </script>
@@ -73,13 +75,11 @@ watch(refreshTrigger, fetchProducts);
   list-style: none;
   padding-left: 0;
 }
-
 .product-item {
   display: flex;
   justify-content: space-between;
   margin-bottom: 0.5rem;
 }
-
 button {
   cursor: pointer;
   background-color: #e53e3e;
@@ -88,11 +88,9 @@ button {
   padding: 4px 8px;
   border-radius: 4px;
 }
-
 button:hover {
   background-color: #9b2c2c;
 }
-
 .error {
   color: red;
   margin-bottom: 1rem;

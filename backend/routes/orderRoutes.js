@@ -6,7 +6,7 @@ const {
   getAllOrders,
   updateOrderStatus,
   deleteOrder,
-} = require('../controllers/orderController'); // ইম্পোর্ট ঠিক আছে
+} = require('../controllers/orderController'); // Import is correct
 
 router.post('/', createOrder);
 router.get('/', getAllOrders);

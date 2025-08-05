@@ -1,11 +1,10 @@
 <script setup>
-import { ref, watch, onMounted } from 'vue';
+import { ref, watch } from 'vue';
 import axios from 'axios';
-import { toRaw } from 'vue';
 
 // Props to optionally accept discount data for edit
 defineProps({
-  discountToEdit: Object, // Optional, পুরানো ডাটা এডিট করার জন্য
+  discountToEdit: Object,
 });
 
 const emit = defineEmits(['saved', 'cancel']);
@@ -13,8 +12,16 @@ const emit = defineEmits(['saved', 'cancel']);
 const name = ref('');
 const offer = ref(0);
 const img = ref('');
+const loading = ref(false);
+const error = ref(null);
 
-// Load data if editing
+// ✅ Dynamic Base URL
+const API_BASE_URL =
+  import.meta.env.MODE === 'development'
+    ? 'http://localhost:5000'
+    : 'https://shopease-production.up.railway.app';
+
+// Watch for edit mode
 watch(
   () => discountToEdit,
   newVal => {
@@ -31,9 +38,6 @@ watch(
   { immediate: true }
 );
 
-const loading = ref(false);
-const error = ref(null);
-
 async function submitForm() {
   if (!name.value || offer.value === null || !img.value) {
     error.value = 'Please fill all fields';
@@ -49,23 +53,20 @@ async function submitForm() {
 
   try {
     if (discountToEdit && discountToEdit._id) {
-      // Update existing discount
-      await axios.put(
-        `http://localhost:5000/api/discounts/${discountToEdit._id}`,
-        {
-          name: name.value,
-          offer: offer.value,
-          img: img.value,
-        }
-      );
-    } else {
-      // Create new discount
-      await axios.post('http://localhost:5000/api/discounts', {
+      // Update
+      await axios.put(`${API_BASE_URL}/api/discounts/${discountToEdit._id}`, {
         name: name.value,
         offer: offer.value,
         img: img.value,
       });
-      // Clear form after new entry
+    } else {
+      // Create
+      await axios.post(`${API_BASE_URL}/api/discounts`, {
+        name: name.value,
+        offer: offer.value,
+        img: img.value,
+      });
+      // Reset form after create
       name.value = '';
       offer.value = 0;
       img.value = '';

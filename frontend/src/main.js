@@ -15,7 +15,7 @@ const i18n = createI18n({
   globalInjection: true,
   locale: localStorage.getItem('lang') || 'en',
   fallbackLocale: 'en',
-  messages: { en, bn, ar },
+  messages, // use the variable here
 });
 
 const app = createApp(App);

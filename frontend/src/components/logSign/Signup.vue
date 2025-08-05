@@ -4,7 +4,6 @@ import axios from 'axios';
 
 const showSignup = ref(true);
 
-// Form fields
 const firstName = ref('');
 const lastName = ref('');
 const dob = ref('');
@@ -14,12 +13,15 @@ const email = ref('');
 const password = ref('');
 const confirmPassword = ref('');
 
-// UI feedback
 const errors = ref({});
 const successMsg = ref('');
 const loading = ref(false);
 
-// Close modal
+const baseURL =
+  import.meta.env.MODE === 'development'
+    ? 'http://localhost:5000'
+    : 'https://shopease-production.up.railway.app';
+
 const closeSignup = () => {
   showSignup.value = false;
   errors.value = {};
@@ -27,7 +29,6 @@ const closeSignup = () => {
   clearFields();
 };
 
-// Reset all fields
 const clearFields = () => {
   firstName.value = '';
   lastName.value = '';
@@ -39,12 +40,10 @@ const clearFields = () => {
   confirmPassword.value = '';
 };
 
-// Submit form
 const handleSignup = async () => {
   errors.value = {};
   successMsg.value = '';
 
-  // Frontend validation
   if (!firstName.value) errors.value.firstName = 'First Name is required';
   if (!lastName.value) errors.value.lastName = 'Last Name is required';
   if (!dob.value) errors.value.dob = 'Date of Birth is required';
@@ -63,18 +62,15 @@ const handleSignup = async () => {
 
   loading.value = true;
   try {
-    const { data } = await axios.post(
-      'http://localhost:5000/api/users/signup',
-      {
-        firstName: firstName.value,
-        lastName: lastName.value,
-        dob: dob.value,
-        gender: gender.value,
-        contactNo: contactNo.value,
-        email: email.value,
-        password: password.value,
-      }
-    );
+    const { data } = await axios.post(`${baseURL}/api/users/signup`, {
+      firstName: firstName.value,
+      lastName: lastName.value,
+      dob: dob.value,
+      gender: gender.value,
+      contactNo: contactNo.value,
+      email: email.value,
+      password: password.value,
+    });
 
     successMsg.value = `Signup successful! Welcome ${data.user.firstName}`;
     clearFields();
@@ -98,7 +94,6 @@ const handleSignup = async () => {
   }
 };
 
-// Close when clicking outside modal
 const onOverlayClick = e => {
   if (e.target.classList.contains('modal-overlay')) {
     closeSignup();

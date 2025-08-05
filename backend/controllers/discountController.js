@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Discount = require('../models/discountModel');
 
 // ✅ Get only active discounts (not soft-deleted)
@@ -15,7 +16,7 @@ const createDiscount = async (req, res) => {
   try {
     const discount = new Discount(req.body);
     await discount.save();
-    res.json(discount);
+    res.status(201).json(discount);
   } catch (error) {
     res.status(400).json({ message: 'Failed to create discount', error });
   }
@@ -25,7 +26,16 @@ const createDiscount = async (req, res) => {
 const softDeleteDiscount = async (req, res) => {
   try {
     const { id } = req.params;
-    await Discount.updateOne({ _id: id }, { $set: { isDeleted: true } });
+
+    const result = await Discount.updateOne(
+      { _id: id },
+      { $set: { isDeleted: true } }
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ message: 'Discount not found' });
+    }
+
     res.status(200).json({ message: 'Discount soft-deleted' });
   } catch (error) {
     res.status(500).json({ message: 'Error soft-deleting discount' });
@@ -36,28 +46,46 @@ const softDeleteDiscount = async (req, res) => {
 const restoreDiscount = async (req, res) => {
   try {
     const { id } = req.params;
-    await Discount.updateOne({ _id: id }, { $set: { isDeleted: false } });
+
+    const result = await Discount.updateOne(
+      { _id: id },
+      { $set: { isDeleted: false } }
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ message: 'Discount not found' });
+    }
+
     res.status(200).json({ message: 'Discount restored successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Error restoring discount' });
   }
 };
 
-// ✅ Update discount (fixed)
+// ✅ Update discount
 const updateDiscount = async (req, res) => {
+  const { id } = req.params;
+  console.log('🔥 Update request for ID:', id);
+  console.log('📝 Update payload:', req.body);
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ message: 'Invalid discount ID' });
+  }
+
   try {
-    const updated = await Discount.findByIdAndUpdate(req.params.id, req.body, {
+    const updated = await Discount.findByIdAndUpdate(id, req.body, {
       new: true,
-      runValidators: true, // Ensures validation rules apply
+      runValidators: true,
     });
 
     if (!updated) {
       return res.status(404).json({ message: 'Discount not found' });
     }
 
+    console.log('✅ Discount updated:', updated);
     res.json(updated);
   } catch (error) {
-    console.error('Update Error:', error);
+    console.error('❌ Update Error:', error);
     res.status(400).json({
       message: 'Failed to update discount',
       error: error.message || 'Validation failed',
@@ -65,7 +93,7 @@ const updateDiscount = async (req, res) => {
   }
 };
 
-// ✅ Optional: Get deleted discounts (for admin use)
+// ✅ Get deleted discounts (for admin use)
 const getDeletedDiscounts = async (req, res) => {
   try {
     const deleted = await Discount.find({ isDeleted: true });

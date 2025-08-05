@@ -5,6 +5,7 @@ const discountSchema = new mongoose.Schema(
     name: {
       type: String,
       required: [true, 'Name is required'],
+      unique: true, // optional uniqueness constraint
     },
     offer: {
       type: Number,
@@ -19,6 +20,7 @@ const discountSchema = new mongoose.Schema(
     isDeleted: {
       type: Boolean,
       default: false,
+      index: true, // index for faster queries filtering by isDeleted
     },
   },
   { timestamps: true }

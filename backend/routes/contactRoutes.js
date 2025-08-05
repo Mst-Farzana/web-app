@@ -1,11 +1,11 @@
-// routes/contactRoutes.js
 const express = require('express');
 const router = express.Router();
 const nodemailer = require('nodemailer');
 require('dotenv').config();
 
+// Setup transporter
 const transporter = nodemailer.createTransport({
-  host: 'smtp-relay.brevo.com', // or smtp.gmail.com if using Gmail
+  host: 'smtp-relay.brevo.com',
   port: 587,
   secure: false,
   auth: {
@@ -14,13 +14,14 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-router.post('/contact', async (req, res) => {
+// POST /api/contact/
+router.post('/', async (req, res) => {
   const { name, email, message } = req.body;
 
   try {
     await transporter.sendMail({
       from: `"Contact Form" <${process.env.EMAIL_USER}>`,
-      to: process.env.EMAIL_RECEIVER, // Your email where message will be sent
+      to: process.env.EMAIL_RECEIVER,
       subject: 'New Contact Message',
       text: `Name: ${name}\nEmail: ${email}\nMessage:\n${message}`,
     });

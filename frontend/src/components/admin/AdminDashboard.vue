@@ -1,13 +1,14 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { logoutAdmin } from '../../stores/adminAuth';
+import { useAdminAuthStore } from '../../stores/adminAuth'; // <-- স্টোর থেকে ইনপোর্ট
+
+const router = useRouter();
+const adminAuth = useAdminAuthStore();
 
 import ProductList from './discount/ProductList.vue';
 import AddProductItem from './discount/AddProductForm.vue';
 import AddParcentage from './discount/AddParcentage.vue';
-
-const router = useRouter();
 
 const showDiscountList = ref(false);
 const activeComponent = ref(''); // 'list', 'add', 'delete'
@@ -28,7 +29,7 @@ function selectComponent(name) {
 }
 
 function handleLogout() {
-  logoutAdmin();
+  adminAuth.logoutAdmin(); // <-- এখানে স্টোরের ফাংশন কল করুন
   router.push('/useradminlogin');
 }
 </script>

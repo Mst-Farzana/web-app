@@ -1,11 +1,13 @@
 const Admin = require('../models/Admin');
 const jwt = require('jsonwebtoken');
 
+// Generate JWT token for admin
 const generateToken = admin =>
   jwt.sign({ id: admin._id, role: 'admin' }, process.env.JWT_SECRET, {
     expiresIn: '12h',
   });
 
+// Register new admin
 exports.registerAdmin = async (req, res) => {
   const { userId, firstName, lastName, password } = req.body;
   if (!userId || !firstName || !lastName || !password) {
@@ -26,13 +28,13 @@ exports.registerAdmin = async (req, res) => {
     });
 
     await newAdmin.save();
-
     res.status(201).json({ message: 'Admin registered successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
+// Admin login
 exports.loginAdmin = async (req, res) => {
   const { userId, password } = req.body;
 
@@ -67,10 +69,13 @@ exports.loginAdmin = async (req, res) => {
   }
 };
 
-// Middleware to protect routes
+// Middleware to protect admin routes
 exports.protectAdmin = (req, res, next) => {
   let token;
-  if (req.headers.authorization?.startsWith('Bearer')) {
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith('Bearer')
+  ) {
     token = req.headers.authorization.split(' ')[1];
   }
   if (!token) {
@@ -87,8 +92,8 @@ exports.protectAdmin = (req, res, next) => {
   }
 };
 
+// Example admin dashboard data endpoint
 exports.getDashboardData = async (req, res) => {
-  // Example protected data for admin
   res.json({
     message: `Welcome Admin ${req.adminId}, here is your dashboard data.`,
   });

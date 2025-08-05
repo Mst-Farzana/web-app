@@ -9,32 +9,33 @@ const protectAdmin = async (req, res, next) => {
     req.headers.authorization.startsWith('Bearer ')
   ) {
     token = req.headers.authorization.split(' ')[1];
-    console.log('Token found:', token);
   } else {
-    console.log('No token found in request headers');
-  }
-
-  if (!token) {
     return res.status(401).json({ message: 'Not authorized, no token' });
   }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.admin = await Admin.findById(decoded.id).select('-password');
 
-    if (!req.admin) {
-      console.log('Admin not found for token:', decoded.id);
+    if (!decoded?.id || decoded.role !== 'admin') {
+      return res.status(403).json({ message: 'Access denied: not an admin' });
+    }
+
+    // Fetch admin and exclude password explicitly
+    const admin = await Admin.findById(decoded.id).select('-password');
+    if (!admin) {
       return res
         .status(401)
         .json({ message: 'Not authorized, admin not found' });
     }
 
-    console.log('Admin authorized:', req.admin._id);
+    // Attach admin info to request object for use in routes
+    req.admin = admin.toObject();
+
     next();
   } catch (err) {
-    console.error('JWT verification error:', err);
+    console.error('Auth middleware error:', err); // Optional: log error for debugging
     return res.status(401).json({ message: 'Not authorized, token failed' });
   }
 };
 
-module.exports = protectAdmin;
+module.exports = { protectAdmin };

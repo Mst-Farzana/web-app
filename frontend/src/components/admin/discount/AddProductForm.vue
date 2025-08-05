@@ -3,6 +3,11 @@ import { ref } from 'vue';
 import axios from 'axios';
 import { refreshTrigger } from '../../../stores/discountDelete';
 
+const baseURL =
+  import.meta.env.MODE === 'development'
+    ? 'http://localhost:5000'
+    : 'https://shopease-production.up.railway.app';
+
 const name = ref('');
 const offer = ref(0);
 const img = ref('');
@@ -20,7 +25,7 @@ async function addProduct() {
 
   try {
     await axios.post(
-      '/api/discounts',
+      `${baseURL}/api/discounts`,
       { name: name.value, offer: offer.value, img: img.value },
       { headers: { Authorization: `Bearer ${adminToken}` } }
     );
@@ -45,13 +50,12 @@ async function addProduct() {
 <template>
   <div>
     <h3 class="underline underline-offset-auto">Add New</h3>
-    <form @submit.prevent="addProduct" class="text-sm">
-      <label>
+    <form @submit.prevent="addProduct" class="text-sm space-y-2">
+      <label class="block">
         Item Name:
-        <input v-model="name" required />
+        <input v-model="name" required class="border p-1 rounded w-full" />
       </label>
-      <br />
-      <label>
+      <label class="block">
         Offer %:
         <input
           type="number"
@@ -59,31 +63,37 @@ async function addProduct() {
           min="0"
           max="100"
           required
+          class="border p-1 rounded w-full"
         />
       </label>
-      <br />
-      <label>
+      <label class="block">
         Image URL:
-        <input v-model="img" placeholder="url/link" required />
+        <input
+          v-model="img"
+          placeholder="url/link"
+          required
+          class="border p-1 rounded w-full"
+        />
       </label>
-      <br />
-      <button type="submit" :disabled="loading" class="font-semibold">
+      <button
+        type="submit"
+        :disabled="loading"
+        class="font-semibold bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+      >
         Add
       </button>
     </form>
 
-    <div v-if="success" class="success">{{ success }}</div>
-    <div v-if="error" class="error">{{ error }}</div>
+    <div v-if="success" class="success mt-2">{{ success }}</div>
+    <div v-if="error" class="error mt-2">{{ error }}</div>
   </div>
 </template>
 
 <style scoped>
 .error {
   color: red;
-  margin-top: 0.5rem;
 }
 .success {
   color: green;
-  margin-top: 0.5rem;
 }
 </style>

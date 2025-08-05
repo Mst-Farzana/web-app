@@ -11,10 +11,15 @@ const loading = ref(false);
 const error = ref('');
 const adminToken = localStorage.getItem('adminToken') || '';
 
+const baseURL =
+  import.meta.env.MODE === 'development'
+    ? 'http://localhost:5000'
+    : 'https://shopease-production.up.railway.app';
+
 const fetchDiscounts = async () => {
   loading.value = true;
   try {
-    const res = await axios.get('/api/discounts');
+    const res = await axios.get(`${baseURL}/api/discounts`);
     products.value = res.data;
   } catch (err) {
     error.value = 'Failed to fetch discount items';
@@ -30,13 +35,11 @@ const enableEditing = id => {
 const saveOffer = async product => {
   try {
     await axios.put(
-      `/api/discounts/${product._id}`,
+      `${baseURL}/api/discounts/${product._id}`,
       { offer: product.offer },
       { headers: { Authorization: `Bearer ${adminToken}` } }
     );
     editingId.value = null;
-
-    // 🔁 Refresh Pinia store for scroll bar
     await discountStore.fetchDiscounts();
   } catch (err) {
     alert('Failed to update offer');

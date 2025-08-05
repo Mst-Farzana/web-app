@@ -2,7 +2,7 @@
 import { ref, computed, watch } from 'vue';
 import topBar from './components/topBar.vue';
 import AdminDashboard from './components/admin/AdminDashboard.vue';
-import { isAdminLoggedIn, logoutAdmin } from './stores/adminAuth';
+import { useAdminAuthStore } from './stores/adminAuth'; // ✅ Correct store usage
 import { useRouter } from 'vue-router';
 import menuBar from './components/menuBar.vue';
 import { useI18n } from 'vue-i18n';
@@ -11,22 +11,30 @@ import Footer from './components/Footer.vue';
 const { locale } = useI18n();
 const currentLang = ref('en');
 
-// Load saved lang from localStorage
+const adminAuth = useAdminAuthStore(); // ✅
+
+const router = useRouter();
+const showAdminSidebar = ref(false);
+const isAdmin = computed(() => adminAuth.isAdminLoggedIn); // ✅ use store state
+
+function toggleAdminSidebar() {
+  showAdminSidebar.value = !showAdminSidebar.value;
+}
+
+function handleLogout() {
+  adminAuth.logoutAdmin(); // ✅ use store action
+  showAdminSidebar.value = false;
+  router.push('/useradminlogin');
+}
+
+// Load saved language
 const savedLang = localStorage.getItem('lang');
 if (savedLang) {
   currentLang.value = savedLang;
   locale.value = savedLang;
 }
 
-// Update language, save to localStorage, and update locale
-const updateLang = lang => {
-  console.log('Language changed to:', lang);
-  currentLang.value = lang;
-  locale.value = lang;
-  localStorage.setItem('lang', lang);
-};
-
-// Optional: Set document direction for Arabic
+// Watch language and update direction
 watch(
   currentLang,
   lang => {
@@ -35,19 +43,12 @@ watch(
   { immediate: true }
 );
 
-const showAdminSidebar = ref(false);
-const isAdmin = computed(() => isAdminLoggedIn.value);
-const router = useRouter();
-
-function toggleAdminSidebar() {
-  showAdminSidebar.value = !showAdminSidebar.value;
-}
-
-function handleLogout() {
-  logoutAdmin();
-  showAdminSidebar.value = false;
-  router.push('/useradminlogin');
-}
+// Update lang on change
+const updateLang = lang => {
+  currentLang.value = lang;
+  locale.value = lang;
+  localStorage.setItem('lang', lang);
+};
 </script>
 
 <template>

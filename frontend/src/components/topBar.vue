@@ -4,20 +4,17 @@ import { useI18n } from 'vue-i18n';
 import Login from './logSign/Login.vue';
 import Signup from './logSign/Signup.vue';
 import AdminDashboard from './admin/AdminDashboard.vue';
-import { isAdminLoggedIn, logoutAdmin } from '../stores/adminAuth';
+import { useAdminAuthStore } from '../stores/adminAuth'; // ✅ Correct store import
 
 const props = defineProps({ language: String });
 const emit = defineEmits(['lang-change']);
 
-// Emit selected language string properly
-const updateLanguage = e => {
-  emit('lang-change', e.target.value);
-};
-
-// ✅ i18n
 const { t } = useI18n();
 
-// search
+// ✅ Auth Store
+const adminAuth = useAdminAuthStore();
+const isAdminLoggedInValue = computed(() => adminAuth.isAdminLoggedIn);
+
 const searchQuery = ref('');
 function handleSearch() {
   if (!searchQuery.value.trim()) {
@@ -27,8 +24,7 @@ function handleSearch() {
   console.log('Searching for:', searchQuery.value);
 }
 
-// Auth
-const isAdminLoggedInValue = computed(() => isAdminLoggedIn.value);
+// User login/signup
 const user = ref(null);
 const showLogin = ref(false);
 const showSignup = ref(false);
@@ -53,13 +49,14 @@ const onLoggedIn = loggedUser => {
   localStorage.setItem('user', JSON.stringify(loggedUser));
   closeForm();
 };
+
 const handleLogout = () => {
-  logoutAdmin();
+  adminAuth.logoutAdmin(); // ✅ call logout from store
   localStorage.removeItem('user');
   user.value = null;
 };
 
-// Load user
+// Load user on mount
 onMounted(() => {
   const savedUser = localStorage.getItem('user');
   if (savedUser) {

@@ -14,12 +14,15 @@ connectDB();
 
 const app = express();
 
-// ======= Serve Static Files with CORS header =======
+// Allowed origins for CORS
 const allowedOrigins = [
+  'http://localhost:5000',
+  'http://localhost:5173',
   'https://mst-farzana.github.io',
   'https://web-app-production.up.railway.app',
 ];
 
+// CORS options
 const corsOptions = {
   origin: function (origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
@@ -34,13 +37,27 @@ const corsOptions = {
   allowedHeaders: ['Content-Type', 'Authorization'],
 };
 
+// ======= Middleware order =======
+
+// 1. Body parsers first
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// 2. Then CORS
 app.use(cors(corsOptions));
 
-// Static files serving with CORS allowing all origins (or চাইলে production ডোমেইন দিবেন)
+// 3. Security and logging
+app.use(helmet());
+
+if (process.env.NODE_ENV !== 'production') {
+  app.use(morgan('dev'));
+}
+
+// 4. Static files with open CORS
 app.use(
   '/images',
   (req, res, next) => {
-    res.header('Access-Control-Allow-Origin', '*'); // অথবা প্রডাকশন ডোমেইন দিন
+    res.header('Access-Control-Allow-Origin', '*'); // Allow all origins (or restrict to your frontend URL)
     next();
   },
   express.static(path.join(__dirname, 'public/images'))
@@ -49,24 +66,16 @@ app.use(
 app.use(
   '/uploads',
   (req, res, next) => {
-    res.setHeader('Access-Control-Allow-Origin', '*'); // অথবা প্রডাকশন ডোমেইন দিন
-    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.header('Access-Control-Allow-Origin', '*'); // Same here
+    res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type');
     next();
   },
   express.static(path.join(__dirname, 'uploads'))
 );
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true })); // Optional: for form-urlencoded data
-app.use(helmet());
-
-if (process.env.NODE_ENV !== 'production') {
-  app.use(morgan('dev')); // Only log in dev mode
-}
-
 // ======= Routes =======
-const productRoutes = require('./routes/productRoutes');
+
 const userRoutes = require('./routes/userRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const discountRoutes = require('./routes/discountRoutes');
@@ -75,14 +84,49 @@ const orderRoutes = require('./routes/orderRoutes');
 const mailRoutes = require('./routes/mailRoutes');
 const contactRoutes = require('./routes/contactRoutes');
 
-app.use('/api/products', productRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/discounts', discountRoutes);
-app.use('/api/categoryItems', categoryItemRoutes);
-app.use('/api/orders', orderRoutes);
-app.use('/api/mail', mailRoutes);
-app.use('/api', contactRoutes);
+try {
+  app.use('/api/users', userRoutes);
+} catch (err) {
+  console.error('❌ Error registering /api/users:', err.message);
+}
+
+// Repeat for all routes similarly...
+
+try {
+  app.use('/api/admin', adminRoutes);
+} catch (err) {
+  console.error('❌ Error registering /api/admin:', err.message);
+}
+
+try {
+  app.use('/api/discounts', discountRoutes);
+} catch (err) {
+  console.error('❌ Error registering /api/discounts:', err.message);
+}
+
+try {
+  app.use('/api/categoryItems', categoryItemRoutes);
+} catch (err) {
+  console.error('❌ Error registering /api/categoryItems:', err.message);
+}
+
+try {
+  app.use('/api/orders', orderRoutes);
+} catch (err) {
+  console.error('❌ Error registering /api/orders:', err.message);
+}
+
+try {
+  app.use('/api/mail', mailRoutes);
+} catch (err) {
+  console.error('❌ Error registering /api/mail:', err.message);
+}
+
+try {
+  app.use('/api/contact', contactRoutes);
+} catch (err) {
+  console.error('❌ Error registering /api/contact:', err.message);
+}
 
 // ======= Base Routes =======
 app.get('/', (req, res) => {

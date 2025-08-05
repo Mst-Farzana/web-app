@@ -1,11 +1,14 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue';
-
-const API_BASE_URL = 'https://web-app-productions.up.railway.app';
-
 import axios from 'axios';
 
 const emit = defineEmits(['edit-discount']);
+
+// ✅ Correct base URL (fixed typo)
+const API_BASE_URL =
+  import.meta.env.MODE === 'development'
+    ? 'http://localhost:5000'
+    : 'https://shopease-production.up.railway.app';
 
 const discounts = ref([]);
 const loading = ref(false);
@@ -13,7 +16,10 @@ const error = ref(null);
 const showDiscountTable = ref(false);
 const tableRef = ref(null);
 
-// Fetch discounts
+// 🔐 (Optional) admin token for protected routes
+const adminToken = localStorage.getItem('adminToken') || '';
+
+// Fetch all discounts
 async function fetchDiscounts() {
   loading.value = true;
   error.value = null;
@@ -27,24 +33,29 @@ async function fetchDiscounts() {
   }
 }
 
-// Delete
+// Delete a discount
 async function deleteDiscount(id) {
   if (!confirm('Are you sure you want to delete this discount?')) return;
+
   try {
-    await axios.delete(`${API_BASE_URL}/api/discounts/${id}`);
+    await axios.delete(`${API_BASE_URL}/api/discounts/${id}`, {
+      headers: {
+        Authorization: `Bearer ${adminToken}`, // 🔐 Use token if required
+      },
+    });
     discounts.value = discounts.value.filter(d => d._id !== id);
   } catch (err) {
     alert('Failed to delete discount');
   }
 }
 
-// Toggle visibility
+// Toggle table view
 function toggleTable(event) {
   event.stopPropagation();
   showDiscountTable.value = !showDiscountTable.value;
 }
 
-// Close if clicked outside
+// Close table when clicked outside
 function handleClickOutside(event) {
   if (tableRef.value && !tableRef.value.contains(event.target)) {
     showDiscountTable.value = false;
@@ -55,6 +66,7 @@ onMounted(() => {
   fetchDiscounts();
   document.addEventListener('click', handleClickOutside);
 });
+
 onBeforeUnmount(() => {
   document.removeEventListener('click', handleClickOutside);
 });
@@ -71,11 +83,17 @@ onBeforeUnmount(() => {
     </button>
 
     <!-- Discount Table -->
-    <div v-if="showDiscountTable" ref="tableRef">
+    <div
+      v-if="showDiscountTable"
+      ref="tableRef"
+      class="bg-white p-4 rounded shadow-md"
+    >
       <h2 class="text-xl font-bold mb-4">Manage Discounts</h2>
 
-      <div v-if="loading" class="text-center py-4">Loading...</div>
-      <div v-if="error" class="text-red-600">{{ error }}</div>
+      <div v-if="loading" class="text-center py-4 text-gray-500">
+        Loading...
+      </div>
+      <div v-if="error" class="text-red-600 text-center">{{ error }}</div>
 
       <table
         v-if="!loading && !error && discounts.length"
@@ -102,7 +120,11 @@ onBeforeUnmount(() => {
               {{ discount.offer }}%
             </td>
             <td class="border border-gray-300 px-2 py-1">
-              <img :src="discount.img" alt="Image" class="w-16 h-auto" />
+              <img
+                :src="discount.img"
+                alt="Image"
+                class="w-16 h-auto rounded"
+              />
             </td>
             <td class="border border-gray-300 px-2 py-1">
               <button
@@ -124,7 +146,7 @@ onBeforeUnmount(() => {
 
       <div
         v-else-if="!loading && !error && !discounts.length"
-        class="text-center py-4"
+        class="text-center py-4 text-gray-500"
       >
         No discounts found.
       </div>
